@@ -5,7 +5,7 @@ const path = require('path'); // Para manejar rutas de archivos
 require('dotenv').config();
 
 const DB_URL = process.env.DB_URL;
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 const app = express();
 const bodyParser = require('body-parser');
 
@@ -29,11 +29,15 @@ app.use('/api/proveedores', proveedorRoutes);
 app.use('/api/productos', productoRoutes);
 
 // Conectar a MongoDB
-mongoose.connect(DB_URL)
-  .then(() => console.log('✅ Conectado a MongoDB'))
-  .catch((error) => console.error('❌ Error de conexión a MongoDB:', error));
+if (!DB_URL) {
+  console.error('❌ No se ha definido DB_URL en las variables de entorno.');
+  process.exit(1); // Detiene la ejecución si no hay una URL válida
+}
 
-// Iniciar servidor
+mongoose.connect(DB_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(error => console.error('❌ Error de conexión a MongoDB:', error));
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });
