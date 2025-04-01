@@ -10,8 +10,8 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded; // Adjuntar los datos del proveedor al request
-    next(); // Continuar con la siguiente ruta
+    req.user = decoded; 
+    next();
   } catch (error) {
     res.status(400).json({ message: 'Token no válido.' });
   }

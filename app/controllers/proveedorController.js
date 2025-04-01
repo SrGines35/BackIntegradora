@@ -5,75 +5,39 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
-// Crear proveedor
-
 exports.createProveedor = async (req, res) => {
   try {
-    const { 
-      name, 
-      email, 
-      password, 
-      NombreEncargado, 
-      CorreoNegocio, 
-      DescripcionNegocio, 
-      NumeroTelefono, 
-      UbicacionNegocio, 
-      UrlFacebook 
-    } = req.body;
+    const { name, email, password, NumeroTelefono } = req.body;
 
-    // Verificar si el proveedor ya existe
-    const proveedorExists = await Proveedor.findOne({ email });
-    if (proveedorExists) return res.status(400).json({ message: "El correo ya está registrado" });
-
-    // Encriptar la contraseña
-    const hashedPassword = await Proveedor.prototype.encryptPassword(password);
-
-    // Procesar y filtrar imágenes duplicadas
-    let imagenPerfil = null;
-    let imagenNegocio = null;
-
-    if (req.files) {
-      // Filtrar la imagen de perfil
-      if (req.files.ImagenPerfil && !req.files.ImagenPerfil[0].duplicate) {
-        imagenPerfil = req.files.ImagenPerfil[0].path;
-      }
-      
-      // Filtrar la imagen de negocio
-      if (req.files.ImagenNegocio && !req.files.ImagenNegocio[0].duplicate) {
-        imagenNegocio = req.files.ImagenNegocio[0].path;
-      }
-      
-      // Eliminar archivos duplicados
-      req.files.forEach(file => {
-        if (file.duplicate) {
-          fs.unlink(file.path, (err) => {
-            if (err) console.error('Error eliminando archivo duplicado:', err);
-          });
-        }
-      });
+    // Validación simplificada
+    if (!name || !email || !password || !NumeroTelefono) {
+      return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
-
-    // Crear un nuevo proveedor
-    const newProveedor = new Proveedor({ 
-      name, 
-      email, 
-      password: hashedPassword, // Almacenar la contraseña encriptada
-      NombreEncargado, 
-      CorreoNegocio, 
-      DescripcionNegocio, 
-      NumeroTelefono, 
-      UbicacionNegocio, 
-      UrlFacebook, 
-      ImagenPerfil: imagenPerfil, 
-      ImagenNegocio: imagenNegocio 
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const newProveedor = new Proveedor({
+      name,
+      email,
+      password: hashedPassword,
+      NumeroTelefono,
+      // No incluimos los campos eliminados
+      ImagenPerfil: req.files['ImagenPerfil']?.[0]?.path,
+      ImagenNegocio: req.files['ImagenNegocio']?.[0]?.path
     });
 
     await newProveedor.save();
-    res.status(201).json({ message: "Proveedor creado correctamente", proveedor: newProveedor });
+    res.status(201).json({ message: "Proveedor creado correctamente" });
+
   } catch (error) {
-    res.status(500).json({ message: "Error al crear el proveedor", error });
+    res.status(500).json({ 
+      message: "Error al crear el proveedor",
+      error: error.message
+    });
   }
 };
+
+
+
 
 // Obtener todos los proveedores
 exports.getProveedores = async (req, res) => {

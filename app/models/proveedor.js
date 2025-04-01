@@ -4,8 +4,8 @@ const bcrypt = require('bcrypt');
 const proveedorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, match: /.+\@.+\..+/, unique: true }, 
-  NombreEncargado: { type: String, required: true },
-  CorreoNegocio: { type: String, required: true },
+  // NombreEncargado: { type: String, required: true },
+  // CorreoNegocio: { type: String, required: true },
   DescripcionNegocio: { type: String },
   NumeroTelefono: { type: String, required: true },
   UbicacionNegocio: { type: String },
