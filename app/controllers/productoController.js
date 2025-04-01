@@ -4,77 +4,36 @@ const fs = require('fs');
 const path = require('path');
 
 // Crear un nuevo producto y asociarlo a un proveedor
-// exports.crearProducto = async (req, res) => {
-//   try {
-//     const { proveedor, ...productoData } = req.body;
-//     const proveedorExistente = await Proveedor.findById(proveedor);
-//     if (!proveedorExistente) {
-//       return res.status(404).json({ message: 'Proveedor no encontrado' });
-//     }
-
-//     // Procesar y filtrar imágenes duplicadas
-//     let imagenesUnicas = [];
-//     const nombresSet = new Set();
-//     if (req.files && req.files.length > 0) {
-//       req.files.forEach(file => {
-//         // Si no se ha agregado la imagen según su nombre original, se guarda
-//         if (!nombresSet.has(file.originalname)) {
-//           nombresSet.add(file.originalname);
-//           imagenesUnicas.push(file.path);
-//         } else {
-//           // Si ya existe, eliminar el archivo duplicado del disco
-//           fs.unlink(file.path, (err) => {
-//             if (err) console.error('Error eliminando archivo duplicado:', err);
-//           });
-//         }
-//       });
-//     }  
-
-//     const nuevoProducto = new Producto({
-//       proveedor,
-//       imagenes: imagenesUnicas,
-//       ...productoData
-//     });
-
-//     await nuevoProducto.save();
-
-//     // Asociar producto al proveedor
-//     proveedorExistente.productos.push(nuevoProducto._id);
-//     await proveedorExistente.save();
-
-//     res.status(201).json({ message: 'Producto creado con éxito', producto: nuevoProducto });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error al crear el producto', error: error.message });
-//   }
-// };
 exports.crearProducto = async (req, res) => {
   try {
-    console.log('Datos recibidos:', req.body); // Verificar datos
-    console.log('Archivos recibidos:', req.files); // Verificar imágenes
-    console.log('Usuario autenticado:', req.user); // Verificar autenticación
-
     const { proveedor, ...productoData } = req.body;
-    // const proveedorExistente = await Proveedor.findById(proveedor);
-    if (!proveedor || !mongoose.Types.ObjectId.isValid(proveedor)) {
-      return res.status(400).json({ 
-        message: 'ID de proveedor inválido o faltante' 
-      });
-    }
     const proveedorExistente = await Proveedor.findById(proveedor);
-    // if (!proveedorExistente) {
-    //   return res.status(404).json({ message: 'Proveedor no encontrado' });
-    // }
+    if (!proveedorExistente) {
+      return res.status(404).json({ message: 'Proveedor no encontrado' });
+    }
 
-    // Procesar imágenes
-    let imagenes = [];
-    if (req.files && req.files.imagenes) {
-      imagenes = req.files.imagenes.map(file => file.path);
+    // Procesar y filtrar imágenes duplicadas
+    let imagenesUnicas = [];
+    const nombresSet = new Set();
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        // Si no se ha agregado la imagen según su nombre original, se guarda
+        if (!nombresSet.has(file.originalname)) {
+          nombresSet.add(file.originalname);
+          imagenesUnicas.push(file.path);
+        } else {
+          // Si ya existe, eliminar el archivo duplicado del disco
+          fs.unlink(file.path, (err) => {
+            if (err) console.error('Error eliminando archivo duplicado:', err);
+          });
+        }
+      });
     }
 
     const nuevoProducto = new Producto({
-      ...productoData,
       proveedor,
-      imagenes
+      imagenes: imagenesUnicas,
+      ...productoData
     });
 
     await nuevoProducto.save();
@@ -83,18 +42,9 @@ exports.crearProducto = async (req, res) => {
     proveedorExistente.productos.push(nuevoProducto._id);
     await proveedorExistente.save();
 
-    res.status(201).json({ 
-      message: 'Producto creado con éxito', 
-      producto: nuevoProducto 
-    });
-
+    res.status(201).json({ message: 'Producto creado con éxito', producto: nuevoProducto });
   } catch (error) {
-    console.error('Error al crear producto:', error);
-    res.status(500).json({ 
-      message: 'Error al crear el producto',
-      error: error.message,
-      stack: error.stack // Solo para desarrollo
-    });
+    res.status(500).json({ message: 'Error al crear el producto', error: error.message });
   }
 };
 
@@ -184,10 +134,11 @@ exports.eliminarProducto = async (req, res) => {
       if (fs.existsSync(filePath)) {
         fs.unlink(filePath, (err) => {
           if (err) console.error('Error al eliminar archivo:', err);
-          else console.log(Archivo eliminado: ${filePath});
+          else console.log(`Archivo eliminado: ${filePath}`);
         });
       }
     });
+
     // Eliminar referencia en el proveedor
     await Proveedor.findByIdAndUpdate(producto.proveedor, { $pull: { productos: producto._id } });
 
@@ -219,7 +170,7 @@ exports.obtenerProductosPorNombre = async (req, res) => {
       return res.status(400).json({ mensaje: 'El nombre debe tener al menos 4 caracteres' });
     }
     const productos = await Producto.find({ 
-      Nombre: { $regex: ^${nombre}, $options: 'i' } 
+      Nombre: { $regex: `^${nombre}`, $options: 'i' } 
     });
     if (productos.length === 0) {
       return res.status(404).json({ mensaje: 'No se encontraron productos con ese nombre' });
