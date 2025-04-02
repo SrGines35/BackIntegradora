@@ -7,10 +7,10 @@ const path = require('path');
 
 exports.createProveedor = async (req, res) => {
   try {
-    const { name, email, password, NumeroTelefono } = req.body;
+    const { name, email, password, NumeroTelefono, DescripcionNegocio, UbicacionNegocio, UrlFacebook } = req.body;
 
     // Validación simplificada
-    if (!name || !email || !password || !NumeroTelefono) {
+    if (!name || !email || !password || !NumeroTelefono || !DescripcionNegocio || !UbicacionNegocio || !UrlFacebook) {
       return res.status(400).json({ message: "Todos los campos son requeridos" });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -20,7 +20,9 @@ exports.createProveedor = async (req, res) => {
       email,
       password: hashedPassword,
       NumeroTelefono,
-      // No incluimos los campos eliminados
+      DescripcionNegocio,
+      UbicacionNegocio,
+      UrlFacebook,
       ImagenPerfil: req.files['ImagenPerfil']?.[0]?.path,
       ImagenNegocio: req.files['ImagenNegocio']?.[0]?.path
     });
